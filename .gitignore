@@ -1,0 +1,70 @@
+# --- 编辑器 / IDE ---
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*~
+
+# --- 操作系统 ---
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# --- Node / 上位机工具 ---
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+build/
+*.tsbuildinfo
+
+# --- Python（上位机脚本备用）---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# --- 嵌入式 / 固件构建产物 ---
+.pio/
+.pioenvs/
+.piolibdeps/
+platformio.ini.bak
+build/
+*.elf
+*.bin
+*.hex
+*.map
+*.o
+*.d
+*.lst
+*.su
+
+# --- 硬件设计工具 ---
+# 嘉立创EDA / KiCad / Fusion360 的自动备份与缓存
+*.kicad_pck
+*-backups/
+*.f3d
+*.bak
+~$*
+*.lck
+
+# --- 3D 打印切片产物（STL 源文件保留，切片结果不入库）---
+*.gcode
+*.3mf
+*.bgcode
+
+# --- 密钥与本地配置（绝不入库）---
+*.pem
+*.key
+.env
+.env.local
+secrets.h
+config.local.*
+
+# --- 临时文件 ---
+*.tmp
+*.log
+.course-build/
