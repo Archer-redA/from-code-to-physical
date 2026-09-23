@@ -53,6 +53,9 @@ function readSTL(file) {
 }
 
 const PREC = parseFloat(process.argv[3] || '0.000001');
+// 预期连通分量数。默认为 1：一体打印的零件必须是连通的一整块。
+// 测试板（一片上放多个独立试件）把它改成实际数量。
+const EXPECT_COMPONENTS = parseInt(process.argv[4] || '1', 10);
 
 function key(p, q) {
   const inv = 1 / PREC;
@@ -120,6 +123,32 @@ function main() {
   const r = (x) => Math.round(x * 1000) / 1000;
   const vol = Math.abs(volume);
 
+  // --- 连通分量（并查集：共享顶点的三角形归为同一分量）---
+  // 一体打印的零件必须是连通的一整块。分离的壳体会变成打出来掉在里面的散件，
+  // 而切片软件不会为此报警 —— 它照样能切片，只是你不知道多了一个零件。
+  const vKey = (p) => {
+    const inv = 1 / PREC;
+    return (Math.round(p[0] * inv) / inv) + ',' + (Math.round(p[1] * inv) / inv) + ',' + (Math.round(p[2] * inv) / inv);
+  };
+  const parent = tris.map((_, i) => i);
+  const find = (x) => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
+  const union = (a, b) => { const ra = find(a), rb = find(b); if (ra !== rb) parent[ra] = rb; };
+  const owner = new Map();
+  tris.forEach((t, i) => {
+    for (const v of t) {
+      const k = vKey(v);
+      if (owner.has(k)) union(i, owner.get(k));
+      else owner.set(k, i);
+    }
+  });
+  const compSize = new Map();
+  for (let i = 0; i < tris.length; i++) {
+    const root = find(i);
+    compSize.set(root, (compSize.get(root) || 0) + 1);
+  }
+  const sizes = [...compSize.values()].sort((a, b) => b - a);
+  const nComp = sizes.length;
+
   console.log('文件        : ' + file);
   console.log('格式        : ' + format);
   console.log('三角形      : ' + tris.length);
@@ -132,8 +161,14 @@ function main() {
   console.log('开边        : ' + open + (open ? '   <-- 有洞，不水密' : ''));
   console.log('非流形边    : ' + nonManifold + (nonManifold ? '   <-- 有问题' : ''));
   console.log('退化三角形  : ' + degenerate);
+  console.log('连通分量    : ' + nComp
+    + (nComp === EXPECT_COMPONENTS
+        ? '（符合预期 ' + EXPECT_COMPONENTS + '）'
+        : '   <-- 与预期 ' + EXPECT_COMPONENTS + ' 不符')
+    + (nComp > 1 ? '  各分量三角形数: ' + sizes.join(' + ') : ''));
 
-  const ok = open === 0 && nonManifold === 0 && degenerate === 0 && tris.length > 0;
+  const ok = open === 0 && nonManifold === 0 && degenerate === 0 && tris.length > 0
+             && nComp === EXPECT_COMPONENTS;
   console.log('结论        : ' + (ok ? '通过 —— 水密流形，可以打印' : '不通过'));
   process.exit(ok ? 0 : 2);
 }
